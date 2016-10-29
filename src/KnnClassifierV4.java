@@ -41,10 +41,11 @@ public class KnnClassifierV4 {
         File file = new File(args[0]);
         int k = Integer.parseInt(args[1]);
         ArrayList<Flower> data = knnClassifier.preProcessData(new FileInputStream(file), k);
-        
+        ArrayList<ConfusionMatrix> cm = knnClassifier.makePredictions(data);
         
         System.out.println("\nRun time = " + (System.currentTimeMillis() - startTime) + " milliseconds");
-        System.out.println("Pre-processor data {" + data.toString());
+        System.out.println("Pre-processed data {" + data.toString());
+        System.out.println("Confusion Matrix data {" + cm.toString());
         System.out.println("\n------------- SUCCESS -------------");
         System.exit(0);
     }
@@ -90,6 +91,21 @@ public class KnnClassifierV4 {
                 
 
         return data;
+    }
+    
+   
+    private ArrayList<ConfusionMatrix> makePredictions(ArrayList<Flower> fl){
+		
+    	ArrayList<ConfusionMatrix> cm = new ArrayList<ConfusionMatrix>();
+    	
+    	
+    	
+    	for(int i = 0; i < fl.size(); i++){
+            cm.add(new ConfusionMatrix(fl.get(i).getIdentity(), null));
+    	}
+    	
+    	return cm;
+    		
     }
 
 
@@ -148,6 +164,8 @@ public class KnnClassifierV4 {
         public String toString() {
             return "" + distance + " " + otherIdentity;
         }
+        
+
 
 		public int compareTo(TrainingDistance td) {
 			if (this.distance > td.distance) return 1;
@@ -186,6 +204,16 @@ public class KnnClassifierV4 {
         public void setTrainingDistances(ArrayList<TrainingDistance> trainingDistances) {
             this.trainingDistances = trainingDistances;
         }
+        
+        public String majorityNeighbor(TrainingDistance td) {
+    		
+        	  
+      	   
+      	   return null;
+      	   
+         }
+        
+        
     }
     
     class ConfusionMatrix {
@@ -193,7 +221,16 @@ public class KnnClassifierV4 {
     	String trueIdentity;
     	String predictedIdentity;
     	
-    	/* getters and setters for true identity */
+    	public ConfusionMatrix(String ti, String pri) {
+			trueIdentity = ti;
+			predictedIdentity = pri;
+		}
+    	
+        public String toString() {
+            return "" + trueIdentity + " " + predictedIdentity;
+        }
+
+		/* getters and setters for true identity */
     	public String getTrueIdentity(){
     		return trueIdentity;
     	}
