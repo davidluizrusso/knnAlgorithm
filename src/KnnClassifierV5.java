@@ -56,7 +56,7 @@ public class KnnClassifierV5 {
             String value = confMat.get(name).toString();  
             System.out.println(key + " " + value + "\n");  
             } 
-        System.out.println("\n------------- SUCCESS -------------");
+
         
 
         
