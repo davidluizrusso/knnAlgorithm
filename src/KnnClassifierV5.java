@@ -1,7 +1,10 @@
 // import java packages
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -29,15 +32,36 @@ public class KnnClassifierV5 {
         float acc = knnClassifier.accuracy(pd);
         HashMap<String, Integer> confMat = knnClassifier.confusionMatrix(pd);
         
-        /* Print results */
-        System.out.println("Accuracy = " + acc);
-        System.out.println("Confusion matrix \n" );
+        /* Print to the console */
+        System.out.println("K = " + k + "\n");
+        System.out.println(pd.toString());
+        System.out.println("\n Accuracy = " + acc);
+        System.out.println("\n Confusion matrix \n" );
         for (String name: confMat.keySet()){
             String key =name.toString();
             String value = confMat.get(name).toString();  
             System.out.println(key + " " + value + "\n");  
             } 
         System.out.println("\n------------- SUCCESS -------------");
+        
+        /* Print results to file */
+        PrintStream out = new PrintStream(new FileOutputStream("output.txt"), true);
+        System.setOut(out);
+        System.out.println("K = " + k + "\n");
+        System.out.println(pd.toString());
+        System.out.println("\n Accuracy = " + acc);
+        System.out.println("\n Confusion matrix \n" );
+        for (String name: confMat.keySet()){
+            String key =name.toString();
+            String value = confMat.get(name).toString();  
+            System.out.println(key + " " + value + "\n");  
+            } 
+        System.out.println("\n------------- SUCCESS -------------");
+        
+
+        
+
+        
         System.exit(0);
     } // end main method
     
@@ -354,7 +378,7 @@ public class KnnClassifierV5 {
 		
 		// toString method
         public String toString() {
-            return "\n" + match + " " + trueIdentity + " " + predictedIdentity;
+            return "\n Match: " + match + " - True Identity: " + trueIdentity + " - Predicted Identity: " + predictedIdentity;
         }
 
         // concatenate the true identity and the predicted identity--used in the confusion matrix 
