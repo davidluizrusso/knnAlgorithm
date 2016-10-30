@@ -13,11 +13,11 @@ import java.util.Set;
 import java.util.StringTokenizer;
 
 
-public class KnnClassifierV4 {
+public class KnnClassifierV5 {
 
     /* UNIT TEST class for the process of reading input data and storing in a ArrayList of Flowers */
     public static ArrayList<Flower> preProcessorUnitTest() throws Exception {
-        KnnClassifierV4 knnClassifier = new KnnClassifierV4();
+        KnnClassifierV5 knnClassifier = new KnnClassifierV5();
 
         String testString = "5.1,3.5,1.4,0.2,Iris-setosa\n4.9,3.0,1.4,0.2,Iris-setosa\n";
         InputStream is = new ByteArrayInputStream(testString.getBytes());
@@ -41,7 +41,7 @@ public class KnnClassifierV4 {
 
         long startTime = System.currentTimeMillis();
 
-        KnnClassifierV4 knnClassifier = new KnnClassifierV4();
+        KnnClassifierV5 knnClassifier = new KnnClassifierV5();
         File file = new File(args[0]);
         int k = Integer.parseInt(args[1]);
         ArrayList<Flower> data = knnClassifier.preProcessData(new FileInputStream(file), k);
