@@ -1,4 +1,4 @@
-import java.io.ByteArrayInputStream;
+// import java packages
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Random;
 import java.util.Scanner;
 import java.util.Set;
@@ -27,10 +26,15 @@ public class KnnClassifierV5 {
         ArrayList<Flower> data = knnClassifier.preProcessData(new FileInputStream(file), k);
         ArrayList<Prediction> pd = knnClassifier.makePredictions(data);
         float acc = knnClassifier.accuracy(pd);
+        HashMap<String, Integer> confMat = knnClassifier.confusionMatrix(pd);
         
-        // System.out.println("\nRun time = " + (System.currentTimeMillis() - startTime) + " milliseconds");
-        // System.out.println("Prediction data {" + pd.toString());
         System.out.println("Accuracy = " + acc);
+        System.out.println("Confusion matrix \n" );
+        for (String name: confMat.keySet()){
+            String key =name.toString();
+            String value = confMat.get(name).toString();  
+            System.out.println(key + " " + value + "\n");  
+            } 
         System.out.println("\n------------- SUCCESS -------------");
         System.exit(0);
     } // end main method
@@ -167,18 +171,41 @@ public class KnnClassifierV5 {
         return predictions;
     } // end makePredictions method
     
+    
+    // method to determine knn accuracy
     private float accuracy(ArrayList<Prediction> pred){
 		
     	int totalSize = pred.size();  
     	int match = 0;
     	
+    	// iterate over match field of pred
     	for(int i = 0; i < pred.size(); i++){
     		if(pred.get(i).isMatch()){
     			match = match + 1;
     		}
     	}
     	
-    	return (float)match/totalSize;
+    	return (float)match/totalSize;   	
+    } // end accuracy method
+    
+    private HashMap<String, Integer> confusionMatrix(ArrayList<Prediction> pred){
+		
+    		HashMap<String, Integer> hm = new HashMap<String, Integer>();
+    	
+    		// populate the HashMap
+    		for(int i = 0; i < pred.size(); i++){
+    			
+    			Prediction pd = pred.get(i);
+    			String id = pd.truePredConcat(pd.getTrueIdentity(), pd.getPredictedIdentity());
+    			if(!hm.containsKey(id)){
+    				hm.put(id, new Integer(1));
+    			} else {
+    				int currentCount = hm.get(id).intValue();
+    				hm.put(id, new Integer(currentCount + 1));
+    			}
+    		}
+    	
+    	return hm;
     	
     }
     
@@ -298,7 +325,12 @@ public class KnnClassifierV5 {
     	
     	public void setPredictedIdentity(String pri){
     		this.predictedIdentity = pri;
-    	}    	
+    	}
+    	
+    	public String truePredConcat(String ti, String pri){
+    		String concat = "True Identity: " + ti + " - Predicted Identity: " + pri + " - ";
+    		return concat;
+    	}
     } // end Prediction Class
     
 
