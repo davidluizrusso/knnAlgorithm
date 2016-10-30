@@ -16,18 +16,20 @@ public class KnnClassifierV5 {
     /* This program is intended to be run from the command line - this is the "main" routine */
     public static void main(String[] args) throws Exception {
 
-        // preProcessorUnitTest();
-
-        long startTime = System.currentTimeMillis();
-
+        /* Initialize KnnClassifier object */
         KnnClassifierV5 knnClassifier = new KnnClassifierV5();
-        File file = new File(args[0]);
-        int k = Integer.parseInt(args[1]);
+        File file = new File(args[0]); // read file from command line
+        int k = Integer.parseInt(args[1]); // read k from command line
+        
+        /* Build and pre-process data; make predictions */
         ArrayList<Flower> data = knnClassifier.preProcessData(new FileInputStream(file), k);
         ArrayList<Prediction> pd = knnClassifier.makePredictions(data);
+        
+        /* get accuracy and confusion matrix output */
         float acc = knnClassifier.accuracy(pd);
         HashMap<String, Integer> confMat = knnClassifier.confusionMatrix(pd);
         
+        /* Print results */
         System.out.println("Accuracy = " + acc);
         System.out.println("Confusion matrix \n" );
         for (String name: confMat.keySet()){
@@ -39,13 +41,16 @@ public class KnnClassifierV5 {
         System.exit(0);
     } // end main method
     
-    /* This method reads the input data in the form of a list of "5.1,3.5,1.4,0.2,Iris-setosa" records
-     * and stores the input data in an Flower Array list */
+    /* This method reads the input data in the form of a list of "petal width, petal length,
+     * sepal width, sepal length" records and stores the input data in an Flower Array list */
     public ArrayList<Flower> readCSV(InputStream in) {
 
-        Scanner input = new Scanner(in);
+        // read the data
+    	@SuppressWarnings("resource")
+		Scanner input = new Scanner(in);
         ArrayList<Flower> returnList = new ArrayList<Flower>();
 
+        // iterate through data and populate flower object
         while (input.hasNextLine()) {
             Flower flower = new Flower();
             flower.rawString = input.nextLine();
@@ -57,12 +62,13 @@ public class KnnClassifierV5 {
                 flower.sl = Float.parseFloat(st.nextToken());
                 flower.identity = st.nextToken();
             }
-            returnList.add(flower);
+            returnList.add(flower); // add record to flower object
         }
         return returnList;
     } // end readCSV method
     
     /* This method finds the distance between two rows of data */
+    /* To avoid using the math library, the square root was not used */
     private float eucDist(Flower a, Flower b) {
         return ((a.pl - b.pl) * (a.pl - b.pl) +
                 (a.pw - b.pw) * (a.pw - b.pw) +
@@ -74,25 +80,28 @@ public class KnnClassifierV5 {
      * between the Flowers in the Flower ArrayList */
     private ArrayList<Flower> preProcessData(InputStream in, int k) {
 
+    	// read data with readCSV and create a TrainingDistance object
         ArrayList<Flower> data = readCSV(in);
         ArrayList<TrainingDistance> td = null;
 
+        /* Compare each row to the other 149 rows and calculate the distance 
+         * between the two records */
         int size = data.size();
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
                 if (j == 0) {
-                    td = new ArrayList<TrainingDistance>();
+                    td = new ArrayList<TrainingDistance>(); // initialize empty ArrayList of TrainingDistance
                 }
                 if (i == j) {
-                    data.get(i).setTrainingDistances(td);
+                    data.get(i).setTrainingDistances(td); // set the training distance matrix
                 } else {
-                    float distance = eucDist(data.get(i), data.get(j));
-                    td.add(new TrainingDistance(data.get(j).getIdentity(), distance));
+                    float distance = eucDist(data.get(i), data.get(j)); // calculate the distance
+                    td.add(new TrainingDistance(data.get(j).getIdentity(), distance)); // add distance to td object
                 }
             }              
         }
         
-
+        // Sort the td object by distance and filter out all but the k nearest neighbors
         for (int i = 0; i < size; i++) {
         	
             td = data.get(i).getTrainingDistances();
@@ -100,17 +109,19 @@ public class KnnClassifierV5 {
             int tdSize = td.size();
             
             for(int j = tdSize-1; j >= k; j--){
-            	td.remove((td.get(j)));
+            	td.remove((td.get(j))); //removal of all but k nearest neighbors
             }     
         }                
         return data;
     } // end preProcessData method
     
+    /* This method determines who the majority identity is of the k nearest neighbors */
     private Prediction majorityNeighbor(String trueIdentity, ArrayList<TrainingDistance> tda){
     	
+    	// initialize a HashMap
     	HashMap<String, Integer> hm = new HashMap<String, Integer>();
     	
-    	// populate the HashMap
+    	// populate the HashMap of identities and counts
     	for(int i = 0; i < tda.size(); i++){
     		TrainingDistance td = tda.get(i);
     		String id = td.getOtherIdentity();
@@ -122,27 +133,28 @@ public class KnnClassifierV5 {
     		}
     	}
     	
-    	// find take majority vote
+    	// find take majority vote using the iterator class
     	Set candidates = hm.keySet();
     	Iterator<String> itr = candidates.iterator();
     	
     	// determine winning flower
-    	String winnerName = "?";
-    	int winnerCount = 0;
-    	boolean tie = false;
+    	String winnerName = "?"; //initialize winnerName
+    	int winnerCount = 0; // initialie winnerCount
+    	boolean tie = false; // initialie tie boolean
     	while(itr.hasNext()){
     		String flowerName = itr.next();
     		int votes = hm.get(flowerName).intValue();
     		
-    		if(votes > winnerCount){
+    		if(votes > winnerCount){ //update winnerCount and flowerName if new winner is found
     			winnerName = flowerName;
     			winnerCount = votes;
-    			tie = false;
+    			tie = false; //keep tie as false
     		} else if(votes == winnerCount) {
-    			tie = true;	
+    			tie = true;	 //set tie to true
     		}
     	}
     	
+    	// break ties using a random number geneator
     	if(tie){
     		Random generator = new Random();
      		 double number = generator.nextDouble(); // generate random number between 0 and 1
@@ -155,10 +167,11 @@ public class KnnClassifierV5 {
      			 winnerName = "Iris-virginica";
      		 }
     	}
-    	
+    	// return an object of class Prediction (actual identity, predicted identity, match indicator)
     	return new Prediction(trueIdentity, winnerName, (0 == trueIdentity.compareTo(winnerName)));   	
     } // end majorityNeighbor method
     
+    // method to set the predictions; returns an arrayList of predictions 
     private ArrayList<Prediction> makePredictions(ArrayList<Flower> data) {
         ArrayList<Prediction> predictions = new ArrayList<Prediction>();
 
@@ -167,7 +180,6 @@ public class KnnClassifierV5 {
             Flower fw = data.get(i);
             predictions.add(majorityNeighbor(fw.getIdentity(), fw.getTrainingDistances()));
         }
-
         return predictions;
     } // end makePredictions method
     
@@ -188,11 +200,16 @@ public class KnnClassifierV5 {
     	return (float)match/totalSize;   	
     } // end accuracy method
     
+    
+    // method to return results in a confusion matrix like form
     private HashMap<String, Integer> confusionMatrix(ArrayList<Prediction> pred){
 		
+    		// initialize an empty HashMap
     		HashMap<String, Integer> hm = new HashMap<String, Integer>();
     	
     		// populate the HashMap
+    		// the key of the HashMap is the unique vlaues of the concatenations of 
+    		// "true identity" and "predicted identity"
     		for(int i = 0; i < pred.size(); i++){
     			
     			Prediction pd = pred.get(i);
@@ -213,17 +230,19 @@ public class KnnClassifierV5 {
 
 
 
-    /* This class stored the a TrainingDistance between on instance of a Flower and another Flower (otherIdentiry) */
+    /* This class stores the TrainingDistance between on instance of a Flower and another Flower */
     class TrainingDistance implements Comparable<TrainingDistance>  {
 
-        float distance; // ...
-        String otherIdentity;
+        float distance; // distance between the given (baseline) flower and the other (comparison) flower
+        String otherIdentity; // identity of the other flower
 
+        // constructor class 
         public TrainingDistance(String id, float dist) {
             otherIdentity = id;
             distance = dist;
         }
 
+        // getters and setters for TrainingDistance object 
         public float getDistance() {
             return distance;
         }
@@ -240,12 +259,14 @@ public class KnnClassifierV5 {
             this.otherIdentity = otherIdentity;
         }
 
+        // to string method for TrainingDistance
         public String toString() {
             return "" + distance + " " + otherIdentity;
         }
         
 
-
+        // comparison method for TrainingDistance
+        // This will help sort the TrainingDistance object by distance later on
 		public int compareTo(TrainingDistance td) {
 			if (this.distance > td.distance) return 1;
             else if (this.distance < td.distance) return -1;
@@ -256,14 +277,15 @@ public class KnnClassifierV5 {
     /* This class is used to capture Flower parameters provided in the input file and also used to capture
      * an array of Training Distances to the other Flowers provided in the file */
     class Flower {
-        String rawString;
+        String rawString; // raw data from the .txt file
         float pw; // Petal width
-        float pl; // ...
-        float sw; // ...
-        float sl; // ...
-        String identity;
-        ArrayList<TrainingDistance> trainingDistances;
+        float pl; // Petal length
+        float sw; // Sepal Width
+        float sl; // Sepal Length
+        String identity; // identity of flower
+        ArrayList<TrainingDistance> trainingDistances; //an ArrayList of distances from the reference flower to the other flowers
 
+        // getters and setters for Flower data
         public String getIdentity() {
             return identity;
         }
@@ -271,11 +293,7 @@ public class KnnClassifierV5 {
         public void setIdentity(String identity) {
             this.identity = identity;
         }
-
-        public String toString() {
-            return "" + pw + " " + pl + " " + sw + " " + sl + " " + identity + " " + trainingDistances;
-        }
-
+        
         public ArrayList<TrainingDistance> getTrainingDistances() {
             return trainingDistances;
         }
@@ -283,14 +301,23 @@ public class KnnClassifierV5 {
         public void setTrainingDistances(ArrayList<TrainingDistance> trainingDistances) {
             this.trainingDistances = trainingDistances;
         }
+
+        // toString methof for flower data
+        public String toString() {
+            return "" + pw + " " + pl + " " + sw + " " + sl + " " + identity + " " + trainingDistances;
+        }
+
+
     } // end Flower class
     
+    // create a class for holding predictions from the knn algorithm
     class Prediction {
     	
     	String trueIdentity;
     	String predictedIdentity;
     	boolean match;
     	
+    	// getters and setters for prediction data
     	public boolean isMatch() {
 			return match;
 		}
@@ -298,17 +325,7 @@ public class KnnClassifierV5 {
 		public void setMatch(boolean match) {
 			this.match = match;
 		}
-
-		public Prediction(String ti, String pri, boolean m) {
-			trueIdentity = ti;
-			predictedIdentity = pri;
-			match = m;
-		}
-    	
-        public String toString() {
-            return "\n" + match + " " + trueIdentity + " " + predictedIdentity;
-        }
-
+		
 		/* getters and setters for true identity */
     	public String getTrueIdentity(){
     		return trueIdentity;
@@ -326,7 +343,21 @@ public class KnnClassifierV5 {
     	public void setPredictedIdentity(String pri){
     		this.predictedIdentity = pri;
     	}
+
+    	// constructor class
+		public Prediction(String ti, String pri, boolean m) {
+			trueIdentity = ti;
+			predictedIdentity = pri;
+			match = m;
+		}
     	
+		
+		// toString method
+        public String toString() {
+            return "\n" + match + " " + trueIdentity + " " + predictedIdentity;
+        }
+
+        // concatenate the true identity and the predicted identity--used in the confusion matrix 
     	public String truePredConcat(String ti, String pri){
     		String concat = "True Identity: " + ti + " - Predicted Identity: " + pri + " - ";
     		return concat;
